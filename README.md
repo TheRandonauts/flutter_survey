@@ -1,28 +1,24 @@
 <p align="center">
 
- <img src="https://user-images.githubusercontent.com/40787439/197688650-c68e9deb-f2d3-463c-b712-f8f03088fd78.svg" alt="Flutter Survey Logo" width="200"/>  
+ <img src="https://user-images.githubusercontent.com/40787439/197688650-c68e9deb-f2d3-463c-b712-f8f03088fd78.svg" alt="Flutter Survey Logo" width="180"/>  
 </p>
 <p align="center">
-<a href="https://pub.dev/packages/flutter_survey"><img src="https://img.shields.io/pub/v/flutter_survey.svg?" alt="Pub"></a>
-<a href="https://codemagic.io/apps/6358c75dd690310147230fea/6358c75dd690310147230fe9/latest_build"><img src="https://api.codemagic.io/apps/6358c75dd690310147230fea/6358c75dd690310147230fe9/status_badge.svg" alt="License: MIT"></a>
-<a href="https://github.com/flutter/packages/tree/main/packages/flutter_lints"><img src="https://img.shields.io/badge/style-flutter_lints-40c4ff.svg" alt="style: flutter lints"></a>
 <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT"></a>
 
 </p>
 
-# <img src="https://user-images.githubusercontent.com/40787439/197688650-c68e9deb-f2d3-463c-b712-f8f03088fd78.svg" alt="Flutter Survey Logo" width="50"/>  Flutter Survey 
+# Flutter Survey 
  Inspired by Google Forms
-
-
 
 A simple yet powerful package that handles the creation of a dynamic questionnaire/research survey with conditional questions.<br>
 Have you ever wanted to implement a form/questionnaire/survey like the ones you see on Google forms?<br>
 Have you ever wanted to implement conditional questions that show or hide the questions that follow, based on the user's input?<br>
 This package helps you build data collection forms hassle-free.
 
+This is a modified design by Randonautica:
 
 <p align="left">
-<img src="https://user-images.githubusercontent.com/40787439/197952319-310602aa-464c-413b-8cf2-e49b6ddebfbb.gif" alt="Screenrecorder-2021-05-11-20-23-21-153" width="200"/>
+<img src="example/screenshot.png" alt="Screenrecorder-2021-05-11-20-23-21-153" width="200"/>
 </p>
 
 
