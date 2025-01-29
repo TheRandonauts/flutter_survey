@@ -26,15 +26,19 @@ class Question extends Equatable {
   ///The list of answers selected by the user.
   late final List<String> answers;
 
-  Question(
-      {required this.question,
-      this.singleChoice = true,
-      Map<String, List<Question>?>? answerChoices,
-      this.isMandatory = false,
-      this.errorText,
-      this.properties,
-      List<String>? answers})
-      : answers = answers ?? [],
+  /// If set to true, only the question text will be displayed (no answer fields).
+  final bool justText;
+
+  Question({
+    required this.question,
+    this.singleChoice = true,
+    Map<String, List<Question>?>? answerChoices,
+    this.isMandatory = false,
+    this.errorText,
+    this.properties,
+    List<String>? answers,
+    this.justText = false, // Default is false
+  })  : answers = answers ?? [],
         answerChoices = answerChoices ?? {},
         assert(
             properties != null && answerChoices!.isEmpty || properties == null);
@@ -46,5 +50,5 @@ class Question extends Equatable {
 
   @override
   List<Object?> get props =>
-      [question, singleChoice, answerChoices, isMandatory];
+      [question, singleChoice, answerChoices, isMandatory, justText];
 }

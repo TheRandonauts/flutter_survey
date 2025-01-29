@@ -4,14 +4,10 @@ import '../models/question.dart';
 import 'sliding_button_row.dart';
 
 class AnswerChoiceWidget extends StatefulWidget {
-  ///A callback function that must be called with the answer.
   final void Function(List<String> answers) onChange;
-
-  ///The parameter that contains the data pertaining to a question.
   final Question question;
 
-  const AnswerChoiceWidget(
-      {Key? key, required this.question, required this.onChange})
+  const AnswerChoiceWidget({Key? key, required this.question, required this.onChange})
       : super(key: key);
 
   @override
@@ -21,6 +17,11 @@ class AnswerChoiceWidget extends StatefulWidget {
 class _AnswerChoiceWidgetState extends State<AnswerChoiceWidget> {
   @override
   Widget build(BuildContext context) {
+    // If justText is true, return an empty widget (nothing gets displayed)
+    if (widget.question.justText) {
+      return const SizedBox.shrink();
+    }
+
     if (widget.question.answerChoices.isNotEmpty) {
       if (widget.question.singleChoice) {
         return SingleChoiceAnswer(
@@ -155,13 +156,10 @@ class _MultipleChoiceAnswerState extends State<MultipleChoiceAnswer> {
 }
 
 class SentenceAnswer extends StatefulWidget {
-  ///A callback function that must be called with the answer.
   final void Function(List<String> answers) onChange;
-
-  ///The parameter that contains the data pertaining to a question.
   final Question question;
-  const SentenceAnswer(
-      {Key? key, required this.onChange, required this.question})
+
+  const SentenceAnswer({Key? key, required this.onChange, required this.question})
       : super(key: key);
 
   @override
@@ -170,6 +168,7 @@ class SentenceAnswer extends StatefulWidget {
 
 class _SentenceAnswerState extends State<SentenceAnswer> {
   final TextEditingController _textEditingController = TextEditingController();
+
   @override
   void initState() {
     if (widget.question.answers.isNotEmpty) {
@@ -180,6 +179,11 @@ class _SentenceAnswerState extends State<SentenceAnswer> {
 
   @override
   Widget build(BuildContext context) {
+    // If justText is true, return an empty widget (nothing gets displayed)
+    if (widget.question.justText) {
+      return const SizedBox.shrink();
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 15),
       child: TextFormField(

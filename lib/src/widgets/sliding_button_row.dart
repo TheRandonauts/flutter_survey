@@ -13,6 +13,7 @@ class SlidingButtonRow extends StatefulWidget {
   final Color? selectColor;
   final Color? decoColor;
   final bool hasShadow;
+  final double parentPadding;
 
   SlidingButtonRow({
     required this.options,
@@ -26,7 +27,8 @@ class SlidingButtonRow extends StatefulWidget {
     this.selectColor = null,
     this.selectTextColor = null,
     this.decoColor = null,
-    this.hasShadow = false
+    this.hasShadow = false,
+    this.parentPadding = 28,
   });
 
   @override
@@ -142,7 +144,7 @@ class _SlidingButtonRowState extends State<SlidingButtonRow> {
 
   List<Widget> _buildSingleSelectionBackground(BuildContext context) {
     final int selectedIndex = selectedIndices.first;
-    final double itemWidth = (MediaQuery.of(context).size.width - 28) / widget.options.length;
+    final double itemWidth = (MediaQuery.of(context).size.width - widget.parentPadding) / widget.options.length;
 
     return [
       AnimatedPositioned(
@@ -162,7 +164,7 @@ class _SlidingButtonRowState extends State<SlidingButtonRow> {
   }
 
   List<Widget> _buildMultipleSelectionBackgrounds(BuildContext context) {
-    final double itemWidth = (MediaQuery.of(context).size.width - 28) / widget.options.length;
+    final double itemWidth = (MediaQuery.of(context).size.width - widget.parentPadding) / widget.options.length;
 
     // Group adjacent selections
     List<List<int>> groupedSelections = [];

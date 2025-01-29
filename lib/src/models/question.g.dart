@@ -10,18 +10,18 @@ Question _$QuestionFromJson(Map<String, dynamic> json) => Question(
       question: json['question'] as String,
       singleChoice: json['single_choice'] as bool? ?? true,
       answerChoices: (json['answer_choices'] as Map<String, dynamic>?)?.map(
-        (k, e) => MapEntry(
-            k,
-            (e as List<dynamic>?)
-                ?.map((e) => Question.fromJson(e as Map<String, dynamic>))
-                .toList()),
+                (k, e) => MapEntry(
+                k,
+                (e as List<dynamic>?)
+                    ?.map((e) => Question.fromJson(e as Map<String, dynamic>))
+                    .toList()),
       ),
       isMandatory: json['is_mandatory'] as bool? ?? false,
       errorText: json['error_text'] as String?,
       properties: json['properties'] as Map<String, dynamic>?,
-      answers:
-          (json['answers'] as List<dynamic>?)?.map((e) => e as String).toList(),
-    );
+      answers: (json['answers'] as List<dynamic>?)?.map((e) => e as String).toList(),
+      justText: json['just_text'] as bool? ?? false, // ✅ NOW INCLUDED
+);
 
 Map<String, dynamic> _$QuestionToJson(Question instance) => <String, dynamic>{
       'question': instance.question,
@@ -32,4 +32,5 @@ Map<String, dynamic> _$QuestionToJson(Question instance) => <String, dynamic>{
       'error_text': instance.errorText,
       'properties': instance.properties,
       'answers': instance.answers,
-    };
+      'just_text': instance.justText, // ✅ NOW INCLUDED
+};
