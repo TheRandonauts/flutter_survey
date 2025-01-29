@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../models/question.dart';
+import 'sliding_button_row.dart';
 
 class AnswerChoiceWidget extends StatefulWidget {
   ///A callback function that must be called with the answer.
@@ -38,22 +39,28 @@ class _AnswerChoiceWidgetState extends State<AnswerChoiceWidget> {
   }
 }
 
+
 class SingleChoiceAnswer extends StatefulWidget {
   ///A callback function that must be called with the answer.
   final void Function(List<String> answers) onChange;
 
   ///The parameter that contains the data pertaining to a question.
   final Question question;
-  const SingleChoiceAnswer(
-      {Key? key, required this.onChange, required this.question})
-      : super(key: key);
+
+  const SingleChoiceAnswer({
+    Key? key,
+    required this.onChange,
+    required this.question,
+  }) : super(key: key);
 
   @override
   State<SingleChoiceAnswer> createState() => _SingleChoiceAnswerState();
 }
 
+
 class _SingleChoiceAnswerState extends State<SingleChoiceAnswer> {
   String? _selectedAnswer;
+
   @override
   void initState() {
     if (widget.question.answers.isNotEmpty) {
@@ -64,30 +71,30 @@ class _SingleChoiceAnswerState extends State<SingleChoiceAnswer> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: widget.question.answerChoices.keys
-            .map((answer) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 4),
-                  child: Row(
-                    children: [
-                      Radio(
-                          value: answer,
-                          groupValue: _selectedAnswer,
-                          onChanged: (value) {
-                            setState(() {
-                              _selectedAnswer = value as String;
-                            });
-                            widget.onChange([_selectedAnswer!]);
-                          }),
-                      Flexible(
-                        fit: FlexFit.loose,
-                        child: Text(answer),
-                      )
-                    ],
-                  ),
-                ))
-            .toList());
+    // Map answer choices to SlidingButtonRow format
+    final List<Map<String, dynamic>> options = widget.question.answerChoices.keys.map((answer) {
+      return {
+        'text': answer,
+        'active': _selectedAnswer == answer,
+      };
+    }).toList();
+
+    return SlidingButtonRow(
+      options: options,
+      isMultipleSelection: false,
+      initialSelection: _selectedAnswer != null
+          ? [widget.question.answerChoices.keys.toList().indexOf(_selectedAnswer!)]
+          : [],
+      onSelectionChanged: (selectedIndices) {
+        if (selectedIndices.isNotEmpty) {
+          final selectedAnswer = widget.question.answerChoices.keys.toList()[selectedIndices.first];
+          setState(() {
+            _selectedAnswer = selectedAnswer;
+          });
+          widget.onChange([_selectedAnswer!]);
+        }
+      },
+    );
   }
 }
 
@@ -97,9 +104,12 @@ class MultipleChoiceAnswer extends StatefulWidget {
 
   ///The parameter that contains the data pertaining to a question.
   final Question question;
-  const MultipleChoiceAnswer(
-      {Key? key, required this.onChange, required this.question})
-      : super(key: key);
+
+  const MultipleChoiceAnswer({
+    Key? key,
+    required this.onChange,
+    required this.question,
+  }) : super(key: key);
 
   @override
   State<MultipleChoiceAnswer> createState() => _MultipleChoiceAnswerState();
@@ -117,28 +127,30 @@ class _MultipleChoiceAnswerState extends State<MultipleChoiceAnswer> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-        children: widget.question.answerChoices.keys
-            .map((answer) => Row(
-                  children: [
-                    Checkbox(
-                        value: _answers.contains(answer),
-                        onChanged: (value) {
-                          if (value == true) {
-                            _answers.add(answer);
-                          } else {
-                            _answers.remove(answer);
-                          }
-                          widget.onChange(_answers);
-                          setState(() {});
-                        }),
-                    Flexible(
-                      fit: FlexFit.loose,
-                      child: Text(answer),
-                    )
-                  ],
-                ))
-            .toList());
+    // Map answer choices to SlidingButtonRow format
+    final List<Map<String, dynamic>> options = widget.question.answerChoices.keys.map((answer) {
+      return {
+        'text': answer,
+        'active': _answers.contains(answer),
+      };
+    }).toList();
+
+    return SlidingButtonRow(
+      options: options,
+      isMultipleSelection: true,
+      initialSelection: _answers
+          .map((answer) => widget.question.answerChoices.keys.toList().indexOf(answer))
+          .toList(),
+      onSelectionChanged: (selectedIndices) {
+        final selectedAnswers = selectedIndices
+            .map((index) => widget.question.answerChoices.keys.toList()[index])
+            .toList();
+        setState(() {
+          _answers = selectedAnswers;
+        });
+        widget.onChange(_answers);
+      },
+    );
   }
 }
 
@@ -169,7 +181,7 @@ class _SentenceAnswerState extends State<SentenceAnswer> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 15),
       child: TextFormField(
         controller: _textEditingController,
         onChanged: (value) {

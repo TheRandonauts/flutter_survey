@@ -42,51 +42,51 @@ class QuestionCard extends StatelessWidget {
         autovalidateMode: autovalidateMode,
         builder: (FormFieldState<List<String>> state) {
           return Container(
-            margin: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
-            child: Card(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
+            margin: const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: const EdgeInsets.only(
+                      left: 8, top: 24, bottom: 6),
+                  child: RichText(
+                    text: TextSpan(
+                        text: question.question,
+                        style: TextStyle(
+                          fontSize: 16
+                        ),
+                        children: question.isMandatory
+                            ? [
+                                const TextSpan(
+                                    text: "*",
+                                    style: TextStyle(color: Colors.red))
+                              ]
+                            : null),
+                  ),
+                ),
+                Padding(
                     padding: const EdgeInsets.only(
-                        top: 24, right: 20, left: 20, bottom: 6),
-                    child: RichText(
-                      text: TextSpan(
-                          text: question.question,
-                          style: Theme.of(context).textTheme.bodyText1,
-                          children: question.isMandatory
-                              ? [
-                                  const TextSpan(
-                                      text: "*",
-                                      style: TextStyle(color: Colors.red))
-                                ]
-                              : null),
+                        left: 4, top: 6, bottom: 6),
+                    child: AnswerChoiceWidget(
+                        question: question,
+                        onChange: (value) {
+                          state.didChange(value);
+
+                          update(value);
+                        })),
+                if (state.hasError)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 15, vertical: 12),
+                    child: Text(
+                      state.errorText!,
+                      style: const TextStyle(color: Colors.red),
                     ),
                   ),
-                  Padding(
-                      padding: const EdgeInsets.only(
-                          left: 4, right: 20, top: 6, bottom: 6),
-                      child: AnswerChoiceWidget(
-                          question: question,
-                          onChange: (value) {
-                            state.didChange(value);
-
-                            update(value);
-                          })),
-                  if (state.hasError)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
-                      child: Text(
-                        state.errorText!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ),
-                  const SizedBox(
-                    height: 12,
-                  )
-                ],
-              ),
+                const SizedBox(
+                  height: 12,
+                )
+              ],
             ),
           );
         });
