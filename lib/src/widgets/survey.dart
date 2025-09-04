@@ -38,8 +38,8 @@ class Survey extends StatefulWidget {
   /// Called after each answer is updated (advance). Receives the full results tree.
   final void Function(List<QuestionResult> results)? onNext;
 
-  /// Optional controller for calling the compact serializers.
-  final SurveyController? controller;
+  final void Function(Map<String, dynamic> flat)? onCompactFlat;
+  final void Function(List<Map<String, dynamic>> tree)? onCompactTree;
 
   const Survey({
     Key? key,
@@ -47,7 +47,8 @@ class Survey extends StatefulWidget {
     this.builder,
     this.defaultErrorText,
     this.onNext,
-    this.controller,
+    this.onCompactFlat,
+    this.onCompactTree,
   }) : super(key: key);
 
   @override
@@ -80,7 +81,6 @@ class _SurveyState extends State<Survey> {
   @override
   void initState() {
     super.initState();
-    widget.controller?._state = this;
 
     // Clone the incoming survey so local state is independent.
     _surveyState = widget.initialData.map((q) => q.clone()).toList();
@@ -104,9 +104,6 @@ class _SurveyState extends State<Survey> {
 
   @override
   void dispose() {
-    if (widget.controller?._state == this) {
-      widget.controller?._state = null;
-    }
     super.dispose();
   }
 
@@ -114,27 +111,31 @@ class _SurveyState extends State<Survey> {
   // Deterministic ID assignment
   // ----------------------------
   void _assignDeterministicIds(List<Question> roots) {
-    int qCounter = 0;
-
-    String nextQ() => 'q${++qCounter}';
+    int autoQ = 0;
+    String nextQ() => 'q${++autoQ}';
 
     void dfs(List<Question> nodes) {
       for (final q in nodes) {
-        // Register a question id if missing
-        _qidByQuestion[q] = _qidByQuestion[q] ?? nextQ();
-        _firstByText.putIfAbsent(q.question, () => q);
+        // Prefer explicit Question.id; fallback to auto
+        final explicitQid = q.id?.trim();
+        final qid = (explicitQid != null && explicitQid.isNotEmpty)
+            ? explicitQid
+            : (_qidByQuestion[q] ?? nextQ());
+        _qidByQuestion[q] = qid;
 
-        // Generate choice IDs in label order
+        // Build choice IDs: prefer explicit per-label IDs in the model; fallback to a1,a2...
         final labels = q.answerChoices.keys.toList();
         if (labels.isNotEmpty) {
-          final map = <String, String>{};
+          final byLabel = <String, String>{};
           for (var i = 0; i < labels.length; i++) {
-            map[labels[i]] = 'a${i + 1}';
+            final label = labels[i];
+            final exp = q.answerChoiceIds?[label]?.trim();
+            byLabel[label] = (exp != null && exp.isNotEmpty) ? exp : 'a${i + 1}';
           }
-          _choiceIdsByQuestion[q] = map;
+          _choiceIdsByQuestion[q] = byLabel;
         }
 
-        // Recurse into any children for every label (branch definitions)
+        // Recurse into branches (for each label's children)
         for (final entry in q.answerChoices.entries) {
           final children = entry.value;
           if (children != null && children.isNotEmpty) {
@@ -144,6 +145,8 @@ class _SurveyState extends State<Survey> {
       }
     }
 
+    _qidByQuestion.clear();
+    _choiceIdsByQuestion.clear();
     dfs(roots);
   }
 
@@ -162,18 +165,19 @@ class _SurveyState extends State<Survey> {
   }
 
   String _registerQuestionId(Question q) {
-    // Assign a new qN deterministically based on current registry size.
-    final id = 'q${_qidByQuestion.length + 1}';
-    _qidByQuestion[q] = id;
-
-    // Ensure choice IDs exist too
+    final id = q.id?.trim();
+    if (id != null && id.isNotEmpty) {
+      _qidByQuestion[q] = id;
+    } else {
+      _qidByQuestion[q] = 'q${_qidByQuestion.length + 1}';
+    }
     if (q.answerChoices.isNotEmpty && !_choiceIdsByQuestion.containsKey(q)) {
       final labels = q.answerChoices.keys.toList();
       _choiceIdsByQuestion[q] = {
         for (var i = 0; i < labels.length; i++) labels[i]: 'a${i + 1}',
       };
     }
-    return id;
+    return _qidByQuestion[q]!;
   }
 
   // -------------
@@ -190,6 +194,17 @@ class _SurveyState extends State<Survey> {
   }
 
   List<Widget> _buildChildren(List<Question> questionNodes) {
+
+    void _emitAll() {
+      widget.onNext?.call(_mapCompletionData(_surveyState));
+      if (widget.onCompactFlat != null) {
+        widget.onCompactFlat!.call(_buildCompactFlatFromState());
+      }
+      if (widget.onCompactTree != null) {
+        widget.onCompactTree!.call(_buildCompactTreeFromState());
+      }
+    }
+
     final list = <Widget>[];
     for (int i = 0; i < questionNodes.length; i++) {
       final q = questionNodes[i];
@@ -200,7 +215,7 @@ class _SurveyState extends State<Survey> {
           ..clear()
           ..addAll(value);
         setState(() {});
-        widget.onNext?.call(_mapCompletionData(_surveyState));
+        _emitAll();
       })
           : (_useRadioList(q)
           ? _RadioListQuestion(
@@ -210,7 +225,7 @@ class _SurveyState extends State<Survey> {
             ..clear()
             ..add(selectedLabel); // ✅ write into Question.answers
           setState(() {});
-          widget.onNext?.call(_mapCompletionData(_surveyState));
+          _emitAll();
         },
         defaultErrorText:
         widget.defaultErrorText ?? 'This field is mandatory*',
@@ -223,7 +238,7 @@ class _SurveyState extends State<Survey> {
             ..clear()
             ..addAll(selectedLabels); // ✅ write into Question.answers
           setState(() {});
-          widget.onNext?.call(_mapCompletionData(_surveyState));
+          _emitAll();
         },
         defaultErrorText:
         widget.defaultErrorText ?? 'This field is mandatory*',
@@ -236,7 +251,7 @@ class _SurveyState extends State<Survey> {
             ..clear()
             ..addAll(value); // ✅ already worked here
           setState(() {});
-          widget.onNext?.call(_mapCompletionData(_surveyState));
+          _emitAll();
         },
         defaultErrorText:
         widget.defaultErrorText ?? 'This field is mandatory*',
