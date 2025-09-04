@@ -1,6 +1,8 @@
 import 'package:equatable/equatable.dart';
 import 'package:json_annotation/json_annotation.dart';
 
+import '../../flutter_survey.dart';
+
 part 'question.g.dart';
 
 @JsonSerializable(explicitToJson: true, fieldRename: FieldRename.snake)
@@ -76,6 +78,85 @@ class Question extends Equatable {
       justText: justText ?? this.justText,
     );
   }
+
+  // Add below your class declaration (keep json_serializable parts untouched)
+  factory Question.single({
+    String? id,
+    required String question,
+    required List<Choice> choices,
+    bool isMandatory = false,
+    String? errorText,
+    Map<String, dynamic>? properties,
+  }) {
+    final props = Map<String, dynamic>.from(properties ?? const {});
+    // prefer radio list for single-choice long labels; can be overridden by caller
+    props.putIfAbsent('useRadioList', () => true);
+
+    return Question(
+      id: id,
+      question: question,
+      singleChoice: true,
+      isMandatory: isMandatory,
+      errorText: errorText,
+      properties: props,
+      answerChoices: choices.toAnswerChoices(),
+      answerChoiceIds: choices.toAnswerChoiceIds(),
+    );
+  }
+
+  factory Question.multi({
+    String? id,
+    required String question,
+    required List<Choice> choices,
+    bool isMandatory = false,
+    String? errorText,
+    Map<String, dynamic>? properties,
+  }) {
+    final props = Map<String, dynamic>.from(properties ?? const {});
+    // prefer checkbox list for multi-select; can be overridden by caller
+    props.putIfAbsent('useCheckboxList', () => true);
+
+    return Question(
+      id: id,
+      question: question,
+      singleChoice: false,
+      isMandatory: isMandatory,
+      errorText: errorText,
+      properties: props,
+      answerChoices: choices.toAnswerChoices(),
+      answerChoiceIds: choices.toAnswerChoiceIds(),
+    );
+  }
+
+  /// Convenience for a text-only info page (no input)
+  factory Question.textPage({
+    required String question,
+    Map<String, dynamic>? properties,
+  }) {
+    return Question(
+      question: question,
+      justText: true,
+      properties: properties,
+    );
+  }
+
+  /// Convenience for a free-text input (no choices)
+  factory Question.input({
+    String? id,
+    required String question,
+    bool isMandatory = false,
+    String? errorText,
+    Map<String, dynamic>? properties,
+  }) {
+    return Question(
+      id: id,
+      question: question,
+      isMandatory: isMandatory,
+      errorText: errorText,
+      properties: properties,
+    );
+  }
+
 
   @override
   List<Object?> get props => [

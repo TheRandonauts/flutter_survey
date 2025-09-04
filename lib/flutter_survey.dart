@@ -7,3 +7,4 @@ export 'package:flutter_survey/src/widgets/survey.dart';
 export 'package:flutter_survey/src/widgets/answer_choice_widget.dart';
 export 'package:flutter_survey/src/models/question_result.dart';
 export 'package:flutter_survey/src/widgets/sliding_button_row.dart';
+export 'package:flutter_survey/src/models/choice.dart';
