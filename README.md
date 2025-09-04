@@ -1,303 +1,172 @@
-<p align="center">
+# flutter_survey (modified)
 
- <img src="https://user-images.githubusercontent.com/40787439/197688650-c68e9deb-f2d3-463c-b712-f8f03088fd78.svg" alt="Flutter Survey Logo" width="180"/>  
-</p>
-<p align="center">
-<a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/license-MIT-purple.svg" alt="License: MIT"></a>
+A flexible branching survey widget for Flutter.
 
-</p>
+This fork extends the original `flutter_survey` package with:
 
-# Flutter Survey 
- Inspired by Google Forms
+- **Compact, locale-agnostic result serialization** (flat or tree)
+- **Deterministic IDs** for questions (`q1`, `q2`, …) and answer choices (`a1`, `a2`, …)
+- **Optional radio-list UI** for single-choice questions
+- **Optional checkbox-list UI** for multi-choice questions
+- Full backward compatibility with the original verbose JSON results
 
-A simple yet powerful package that handles the creation of a dynamic questionnaire/research survey with conditional questions.<br>
-Have you ever wanted to implement a form/questionnaire/survey like the ones you see on Google forms?<br>
-Have you ever wanted to implement conditional questions that show or hide the questions that follow, based on the user's input?<br>
-This package helps you build data collection forms hassle-free.
+---
 
-This is a modified design by Randonautica:
+## Features
 
-<p align="left">
-<img src="example/screenshot.png" alt="Screenrecorder-2021-05-11-20-23-21-153" width="200"/>
-</p>
+- Create surveys with branching logic (answers can lead to follow-up questions).
+- Display questions using the built-in **QuestionCard** (default).
+- Switch to **radio lists** (single-choice) or **checkbox lists** (multi-choice) for better UX with longer answer texts.
+- Get results in multiple formats:
+    - Original **verbose JSON** (with full question + answer texts).
+    - **Compact Flat** → `{ "q1": "a2", "q2": ["a1","a3"], "q3": "free text" }`
+    - **Compact Tree** → `[{"q":"q1","a":["a2"],"children":[...]}]`
 
+---
 
+## Getting Started
 
+### Define Questions
 
-
-## 📋 Features
-:heavy_check_mark: Eliminates `boilerplate` code for surveys.<br>
-:heavy_check_mark: Implement `Conditional/Single Choice/Multiple` Choice questions.<br>
-:heavy_check_mark: Intuitively construct your own questions with `infinite nesting`.<br> 
-:heavy_check_mark: `Customize` it by creating your own form widgets from scratch using the `builder` method.<br>
-:heavy_check_mark: Add your own `properties` for your `custom` widgets.<br>
-:heavy_check_mark: Supports `validation` using the `Form` widget<br>
-:heavy_check_mark: Implicitly supports `Dark theme`.<br>
-
-## 🔮 Next Update
-:heavy_check_mark: Supports `Internationalization`.<br>
-:heavy_check_mark: Supports custom `regex` validation<br>
-:heavy_check_mark: Supports various formats of input (`Date Picker`, `File Upload`, `Slider` etc)<br>
-:heavy_check_mark: Track progress<br>
-
-## ⚙️ Installation
-
-This project requires the latest version of [Dart](https://www.dartlang.org/). You can download the latest and greatest [here](https://www.dartlang.org/tools/sdk#install).
-
-### 1. Depend on it
-
-Add this to your package's `pubspec.yaml` file:
-
-```yaml
-dependencies:
-    flutter_survey: '^0.1.4'
-```
-
-
-#### 2. Install it
-
-You can install packages from the command line:
-
-```bash
-$ pub get
-..
-```
-
-Alternatively, your editor might support pub. Check the docs for your editor to learn more.
-
-#### 3. Import it
-
-Now in your Dart code, you can use:
-
-```Dart
-import 'package:flutter_survey/survey.dart';
-```
-
-## 📖 Usage
-
-First, you must initialize the question structure where you specify the type of questions
-and their possible answers, if any. You can also nest questions to form conditional questions.
-You can even mark them as mandatory. This can be either in json format fetched from the server or can be constructed using the
-[Question] model provided as part of this package. The structure is intuitive and determines the flow of the form.
-
-### Types of questions
-The Questions are classified based on the kind of input they take.
-
-### Text Input Question
-As the name suggests here the answer is not limited to any specific choice.
-The answer to this question can be typed in by the user, single line or multiline.
-Setting the `answerChoice` variable to null or simply leaving it altogether gives you this.    
- ```Dart
- Question(
-  question: "What is your name?",
-)
- ```
-### Single Choice Question
-Here, Radio Buttons are used as input. You define the possible answer choices as a Map,
-with the keys being the answer choices. Note that the value of the corresponding keys happen to be null.
-This is because they don't have an associated list of questions that follow it.
-
- ```Dart
+```dart
+final questions = <Question>[
+  // Intro (informational only)
   Question(
-    question: 'Do you like drinking coffee?',
-    answerChoices: {
-      "Yes": null,
-      "No": null,
-    },
+    question: 'Welcome!',
+    justText: true,
+    properties: {'subtitle': 'Tap “Start” to begin.'},
   ),
- ```
 
-### Multiple Choice Question
-Here, Checkboxes are used as input. Just like the Single Choice Questions, You define the possible answer choices as a Map
-with the keys being the answer choices. Note that even here the value of the corresponding keys happen to be null for the same
-reason as Single Choice Questions. The difference here is that you set `isSingleChoice` to false.
-
- ```Dart
- Question(
-   isSingleChoice: false,
-   question: 'What are the brands that you have tried?',
-   answerChoices: {
-     "Nestle": null,
-     "Starbucks": null,
-     "Coffee Day": null,
-   },
- ),
- ```
-### Conditional/Nested Questions
-This is where you define questions that follow based on the answer of the question prior to it.
-The values of the keys defined in the `answerChoices` field determines the flow. For example here, 
-if the user were to choose "Yes" to "Do you like drinking coffee", the user would be confronted with 
-another question "What are the brands you've tried?" followed by more nesting.
-
- ```Dart
-
+  // Single-choice with radio list
   Question(
+    question: 'How was your experience?',
+    singleChoice: true,
     isMandatory: true,
-    question: 'Do you like drinking coffee?',
+    properties: {'useRadioList': true}, // 👈 opt-in radio list
     answerChoices: {
-      "Yes": [
-        Question(
-            singleChoice: false,
-            question: "What are the brands that you've tried?",
-            answerChoices: {
-              "Nestle": null,
-              "Starbucks": null,
-              "Coffee Day": [
-                Question(
-                  question: "Did you enjoy visiting Coffee Day?",
-                  isMandatory: true,
-                  answerChoices: {
-                    "Yes": [
-                      Question(
-                        question: "Please tell us why you like it",
-                      )
-                    ],
-                    "No": [
-                      Question(
-                        question: "Please tell us what went wrong",
-                      )
-                    ],
-                  },
-                )
-              ],
-            })
-      ],
-      "No": [
-        Question(
-          question: "Do you like drinking Tea then?",
-          answerChoices: {
-            "Yes": [
-              Question(
-                  question: "What are the brands that you've tried?",
-                  answerChoices: {
-                    "Nestle": null,
-                    "ChaiBucks": null,
-                    "Indian Premium Tea": [
-                      Question(
-                        question: "Did you enjoy visiting IPT?",
-                        answerChoices: {
-                          "Yes": [
-                            Question(
-                              question: "Please tell us why you like it",
-                            )
-                          ],
-                          "No": [
-                            Question(
-                              question: "Please tell us what went wrong",
-                            )
-                          ],
-                        },
-                      )
-                    ],
-                  })
-            ],
-            "No": null,
-          },
-        )
-      ],
+      'Great': null,
+      'Okay': null,
+      'Not good': null,
     },
   ),
- ```
 
-### A full question structure represented as a List:
-```Dart
- List<Question> _initialData = [
+  // Multi-choice with checkbox list
   Question(
-    isMandatory: true,
-    question: 'Do you like drinking coffee?',
+    question: 'Which things did you notice?',
+    singleChoice: false,
+    properties: {'useCheckboxList': true}, // 👈 opt-in checkbox list
     answerChoices: {
-      "Yes": [
-        Question(
-            singleChoice: false,
-            question: "What are the brands that you've tried?",
-            answerChoices: {
-              "Nestle": null,
-              "Starbucks": null,
-              "Coffee Day": [
-                Question(
-                  question: "Did you enjoy visiting Coffee Day?",
-                  isMandatory: true,
-                  answerChoices: {
-                    "Yes": [
-                      Question(
-                        question: "Please tell us why you like it",
-                      )
-                    ],
-                    "No": [
-                      Question(
-                        question: "Please tell us what went wrong",
-                      )
-                    ],
-                  },
-                )
-              ],
-            })
-      ],
-      "No": [
-        Question(
-          question: "Do you like drinking Tea then?",
-          answerChoices: {
-            "Yes": [
-              Question(
-                  question: "What are the brands that you've tried?",
-                  answerChoices: {
-                    "Nestle": null,
-                    "ChaiBucks": null,
-                    "Indian Premium Tea": [
-                      Question(
-                        question: "Did you enjoy visiting IPT?",
-                        answerChoices: {
-                          "Yes": [
-                            Question(
-                              question: "Please tell us why you like it",
-                            )
-                          ],
-                          "No": [
-                            Question(
-                              question: "Please tell us what went wrong",
-                            )
-                          ],
-                        },
-                      )
-                    ],
-                  })
-            ],
-            "No": null,
-          },
-        )
-      ],
+      'Animals': null,
+      'People': null,
+      'Symbols': null,
+      'Synchronicities': null,
     },
   ),
+
+  // Thank you screen
   Question(
-      question: "What age group do you fall in?",
-      isMandatory: true,
-      answerChoices: const {
-        "18-20": null,
-        "20-30": null,
-        "Greater than 30": null,
-      })
+    question: 'Thanks for completing the survey!',
+    justText: true,
+  ),
 ];
 ```
-### Pass the list of questions to the ConditionalQuestions Widget.
-This is the main widget that handles the form.
-The list of questions constructed above are passed to the `initialData` parameter.
-The `onNext` callback function is an optional parameter that is called with the current state of the survey, which is a List of
-`QuestionResult` objects.
-```Dart
-         Survey(
-          initialData: _surveyData,
-          onNext:(questionResults){
-              print(questionResults);
-              //store the result
-          },
-        )
+
+### Render the Survey
+
+```dart
+final controller = SurveyController();
+
+Survey(
+  initialData: questions,
+  controller: controller,
+  onNext: (resultsTree) {
+    // Old verbose JSON (still available)
+    final verbose = resultsTree.map((r) => r.toJson()).toList();
+
+    // New compact serializers
+    final compactFlat = controller.buildCompactFlat();
+    final compactTree = controller.buildCompactTree();
+
+    print('Verbose: $verbose');
+    print('Compact flat: $compactFlat');
+    print('Compact tree: $compactTree');
+  },
+);
 ```
 
+---
 
-## 🤝 Contributing
-Help make this package more useful and serve the needs of the community by reporting bugs, 
-submitting feedback and/or opening a PR.
+## Results Formats
 
-## ℹ️ About me
+### Verbose JSON (original)
+```json
+[
+  {
+    "question": "How was your experience?",
+    "answers": ["Great"],
+    "children": []
+  }
+]
+```
 
-Visit my LinkedIn at https://www.linkedin.com/in/michel98
+### Compact Flat
+```json
+{
+  "q1": "a1",
+  "q2": ["a1","a3"],
+  "q3": "some free text"
+}
+```
+
+### Compact Tree
+```json
+[
+  {
+    "q": "q1",
+    "a": ["a1"],
+    "children": [
+      {
+        "q": "q2",
+        "a": ["a2"],
+        "children": []
+      }
+    ]
+  }
+]
+```
+
+---
+
+## UI Options
+
+- **Default**: `SlidingButtonRow` for short, mobile-friendly options.
+- **Radio List**: Use for single-choice questions with long answers.
+  ```dart
+  properties: {'useRadioList': true}
+  ```
+- **Checkbox List**: Use for multi-choice questions with long answers.
+  ```dart
+  properties: {'useCheckboxList': true}
+  ```
+
+---
+
+## Compatibility
+
+- All existing APIs are preserved.
+- `onNext` still returns the original `List<QuestionResult>`.
+- Compact serializers are optional via the `SurveyController`.
+
+---
+
+## Roadmap
+
+- Global toggles (`preferListUIForSingle` / `preferListUIForMulti`) in `Survey` constructor.
+- More customization hooks for builders.
+- Searchable lists for long sets of answers.
+
+---
+
+## License
+
+MIT (same as the original project).
