@@ -147,6 +147,20 @@ class _SurveyState extends State<Survey> {
     dfs(roots);
   }
 
+  bool _useRadioList(Question q) {
+    final p = q.properties;
+    if (p == null) return false;
+    final v = p['useRadioList'];
+    return q.singleChoice && (v == true || v == 'true');
+  }
+
+  bool _useCheckboxList(Question q) {
+    final p = q.properties;
+    if (p == null) return false;
+    final v = p['useCheckboxList'];
+    return !q.singleChoice && (v == true || v == 'true');
+  }
+
   // -------------
   // UI rendering
   // -------------
@@ -165,15 +179,43 @@ class _SurveyState extends State<Survey> {
     for (int i = 0; i < questionNodes.length; i++) {
       final q = questionNodes[i];
 
-      final child = _builder(context, q, (List<String> value) {
-        q.answers
-          ..clear()
-          ..addAll(value);
-
+      final child = (widget.builder != null)
+          ? _builder(context, q, (List<String> value) {
+        q.answers..clear()..addAll(value);
         setState(() {});
-        // Notify legacy results to callers after each change
         widget.onNext?.call(_mapCompletionData(_surveyState));
-      });
+      })
+          : (_useRadioList(q)
+          ? _RadioListQuestion(
+        question: q,
+        onChanged: (selectedLabel) {
+          q.answers..clear()..add(selectedLabel);
+          setState(() {});
+          widget.onNext?.call(_mapCompletionData(_surveyState));
+        },
+        defaultErrorText: widget.defaultErrorText ?? 'This field is mandatory*',
+      )
+          : _useCheckboxList(q)
+          ? _CheckboxListQuestion(
+        question: q,
+        onChanged: (selectedLabels) {
+          q.answers..clear()..addAll(selectedLabels);
+          setState(() {});
+          widget.onNext?.call(_mapCompletionData(_surveyState));
+        },
+        defaultErrorText: widget.defaultErrorText ?? 'This field is mandatory*',
+      )
+          : QuestionCard(
+        key: ObjectKey(q),
+        question: q,
+        update: (List<String> value) {
+          q.answers..clear()..addAll(value);
+          setState(() {});
+          widget.onNext?.call(_mapCompletionData(_surveyState));
+        },
+        defaultErrorText: widget.defaultErrorText ?? 'This field is mandatory*',
+        autovalidateMode: AutovalidateMode.onUserInteraction,
+      ));
 
       list.add(child);
 
@@ -306,5 +348,167 @@ class _SurveyState extends State<Survey> {
       }
     }
     return out;
+  }
+}
+
+class _RadioListQuestion extends StatefulWidget {
+  const _RadioListQuestion({
+    required this.question,
+    required this.onChanged,
+    required this.defaultErrorText,
+  });
+
+  final Question question;
+  final void Function(String selectedLabel) onChanged;
+  final String defaultErrorText;
+
+  @override
+  State<_RadioListQuestion> createState() => _RadioListQuestionState();
+}
+
+class _RadioListQuestionState extends State<_RadioListQuestion> {
+  String? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    // Seed from existing answer if present
+    if (widget.question.answers.isNotEmpty) {
+      _selected = widget.question.answers.first;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = widget.question;
+    final labels = q.answerChoices.keys.toList();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Question text
+            Text(
+              q.question,
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 8),
+
+            // Radio list
+            ...labels.map((label) {
+              return RadioListTile<String>(
+                value: label,
+                groupValue: _selected,
+                onChanged: (val) {
+                  setState(() => _selected = val);
+                  if (val != null) widget.onChanged(val);
+                },
+                title: Text(label),
+                contentPadding: EdgeInsets.zero,
+                dense: false,
+              );
+            }),
+
+            // Simple required error hint (optional)
+            if (q.isMandatory && (_selected == null || _selected!.isEmpty))
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  widget.defaultErrorText,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _CheckboxListQuestion extends StatefulWidget {
+  const _CheckboxListQuestion({
+    required this.question,
+    required this.onChanged,
+    required this.defaultErrorText,
+  });
+
+  final Question question;
+  final void Function(List<String> selectedLabels) onChanged;
+  final String defaultErrorText;
+
+  @override
+  State<_CheckboxListQuestion> createState() => _CheckboxListQuestionState();
+}
+
+class _CheckboxListQuestionState extends State<_CheckboxListQuestion> {
+  late Set<String> _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = widget.question.answers.toSet();
+  }
+
+  void _toggle(String label, bool? checked) {
+    setState(() {
+      if (checked == true) {
+        _selected.add(label);
+      } else {
+        _selected.remove(label);
+      }
+    });
+    widget.onChanged(_selected.toList());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final q = widget.question;
+    final labels = q.answerChoices.keys.toList();
+
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 8),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(q.question, style: Theme.of(context).textTheme.titleMedium),
+            const SizedBox(height: 8),
+
+            // Checkbox list
+            ...labels.map((label) {
+              final checked = _selected.contains(label);
+              return CheckboxListTile(
+                value: checked,
+                onChanged: (v) => _toggle(label, v),
+                title: Text(label),
+                contentPadding: EdgeInsets.zero,
+                dense: false,
+                controlAffinity: ListTileControlAffinity.leading,
+              );
+            }),
+
+            // Simple required error hint (optional)
+            if (q.isMandatory && _selected.isEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  widget.defaultErrorText,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.error,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }
