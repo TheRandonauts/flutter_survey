@@ -196,7 +196,9 @@ class _SurveyState extends State<Survey> {
 
       final child = (widget.builder != null)
           ? _builder(context, q, (List<String> value) {
-        q.answers..clear()..addAll(value);
+        q.answers
+          ..clear()
+          ..addAll(value);
         setState(() {});
         widget.onNext?.call(_mapCompletionData(_surveyState));
       })
@@ -204,47 +206,57 @@ class _SurveyState extends State<Survey> {
           ? _RadioListQuestion(
         question: q,
         onChanged: (selectedLabel) {
-          q.answers..clear()..add(selectedLabel);
+          q.answers
+            ..clear()
+            ..add(selectedLabel); // ✅ write into Question.answers
           setState(() {});
           widget.onNext?.call(_mapCompletionData(_surveyState));
         },
-        defaultErrorText: widget.defaultErrorText ?? 'This field is mandatory*',
+        defaultErrorText:
+        widget.defaultErrorText ?? 'This field is mandatory*',
       )
           : _useCheckboxList(q)
           ? _CheckboxListQuestion(
         question: q,
         onChanged: (selectedLabels) {
-          q.answers..clear()..addAll(selectedLabels);
+          q.answers
+            ..clear()
+            ..addAll(selectedLabels); // ✅ write into Question.answers
           setState(() {});
           widget.onNext?.call(_mapCompletionData(_surveyState));
         },
-        defaultErrorText: widget.defaultErrorText ?? 'This field is mandatory*',
+        defaultErrorText:
+        widget.defaultErrorText ?? 'This field is mandatory*',
       )
           : QuestionCard(
         key: ObjectKey(q),
         question: q,
         update: (List<String> value) {
-          q.answers..clear()..addAll(value);
+          q.answers
+            ..clear()
+            ..addAll(value); // ✅ already worked here
           setState(() {});
           widget.onNext?.call(_mapCompletionData(_surveyState));
         },
-        defaultErrorText: widget.defaultErrorText ?? 'This field is mandatory*',
+        defaultErrorText:
+        widget.defaultErrorText ?? 'This field is mandatory*',
         autovalidateMode: AutovalidateMode.onUserInteraction,
       ));
 
-      list.add(child);
+    list.add(child);
 
-      // If answered and it's a choice-type question, render any branched children
-      if (_isAnswered(q) && _isNotSentenceQuestion(q)) {
-        for (final answer in q.answers) {
-          if (_hasAssociatedQuestionList(q, answer)) {
-            list.addAll(_buildChildren(q.answerChoices[answer]!));
-          }
-        }
-      }
+    // If answered and it's a choice-type question, render any branched children
+    if (_isAnswered(q) && _isNotSentenceQuestion(q)) {
+    for (final answer in q.answers) {
+    if (_hasAssociatedQuestionList(q, answer)) {
+    list.addAll(_buildChildren(q.answerChoices[answer]!));
     }
+    }
+    }
+  }
     return list;
   }
+
 
   bool _isAnswered(Question question) => question.answers.isNotEmpty;
 
