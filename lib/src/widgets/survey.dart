@@ -161,6 +161,21 @@ class _SurveyState extends State<Survey> {
     return !q.singleChoice && (v == true || v == 'true');
   }
 
+  String _registerQuestionId(Question q) {
+    // Assign a new qN deterministically based on current registry size.
+    final id = 'q${_qidByQuestion.length + 1}';
+    _qidByQuestion[q] = id;
+
+    // Ensure choice IDs exist too
+    if (q.answerChoices.isNotEmpty && !_choiceIdsByQuestion.containsKey(q)) {
+      final labels = q.answerChoices.keys.toList();
+      _choiceIdsByQuestion[q] = {
+        for (var i = 0; i < labels.length; i++) labels[i]: 'a${i + 1}',
+      };
+    }
+    return id;
+  }
+
   // -------------
   // UI rendering
   // -------------
@@ -269,11 +284,14 @@ class _SurveyState extends State<Survey> {
   /// Returns a compact *flat* map:
   ///   { "q1": "a2", "q2": ["a1","a3"], "q3": "free text" }
   Map<String, dynamic> _buildCompactFlatFromState() {
+    if (_qidByQuestion.isEmpty) {
+      _assignDeterministicIds(_surveyState);
+    }
     final out = <String, dynamic>{};
 
     void visit(List<Question> nodes) {
       for (final q in nodes) {
-        final qid = _qidByQuestion[q]!;
+        final qid = _qidByQuestion[q] ?? _registerQuestionId(q);
 
         final hasChoices = q.answerChoices.isNotEmpty;
         final isText = !hasChoices && !q.justText;
@@ -306,8 +324,11 @@ class _SurveyState extends State<Survey> {
   /// Returns a compact *tree* preserving branching:
   ///   [ {"q":"q1","a":["a2"],"children":[ ... ]} ]
   List<Map<String, dynamic>> _buildCompactTreeFromState() {
+    if (_qidByQuestion.isEmpty) {
+      _assignDeterministicIds(_surveyState);
+    }
     Map<String, dynamic> nodeFor(Question q) {
-      final qid = _qidByQuestion[q]!;
+      final qid = _qidByQuestion[q] ?? _registerQuestionId(q);
       final hasChoices = q.answerChoices.isNotEmpty;
       final isText = !hasChoices && !q.justText;
 
